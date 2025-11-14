@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { products, Product } from "../data/products";
 import {
   Table,
   TableBody,
@@ -6,153 +7,158 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+} from "./ui/table";
+import { Badge } from "./ui/badge";
+import { Input } from "./ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Product, products } from "@/types/products";
+} from "./ui/select";
 
-const getSeasonColor = (season: string) => {
-  const colorMap: Record<string, string> = {
-    "ВЕСНА": "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
-    "ЛЕТО": "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-    "ОСЕНЬ": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-    "ЗИМА": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    "НОВЫЙ ГОД": "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-    "ВСЕЗОННАЯ ПРОДУКЦИЯ": "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300",
-    "НЕТ В НАЛИЧИИ": "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  };
-  return colorMap[season] || "bg-muted text-muted-foreground";
+const seasonColors: Record<string, string> = {
+  "ВЕСНА": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  "ЛЕТО": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  "ОСЕНЬ": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  "ЗИМА": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  "НОВЫЙ ГОД": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  "ПОСТОЯННО": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
 };
 
 export const ProductsTable = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [seasonFilter, setSeasonFilter] = useState<string>("all");
-  const [groupFilter, setGroupFilter] = useState<string>("all");
-  const [subgroupFilter, setSubgroupFilter] = useState<string>("all");
+  const [selectedSeason, setSelectedSeason] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSeason = seasonFilter === "all" || product.season === seasonFilter;
-    const matchesGroup = groupFilter === "all" || product.group === groupFilter;
-    const matchesSubgroup = subgroupFilter === "all" || product.subgroup === subgroupFilter;
+  const seasons = useMemo(() => Array.from(new Set(products.map(p => p.season))), []);
+  const categories = useMemo(() => Array.from(new Set(products.map(p => p.category))), []);
 
-    return matchesSearch && matchesSeason && matchesGroup && matchesSubgroup;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const seasonMatch = selectedSeason === "all" || product.season === selectedSeason;
+      const categoryMatch = selectedCategory === "all" || product.category === selectedCategory;
+      const searchMatch = searchQuery === "" || product.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return seasonMatch && categoryMatch && searchMatch;
+    });
+  }, [selectedSeason, selectedCategory, searchQuery]);
 
-  const seasons = Array.from(new Set(products.map(p => p.season))).sort();
-  const groups = Array.from(new Set(products.map(p => p.group))).sort();
-  const subgroups = Array.from(new Set(products.map(p => p.subgroup))).sort();
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, Record<string, Product[]>> = {};
+    filteredProducts.forEach(product => {
+      groups[product.season] ??= {};
+      groups[product.season][product.category] ??= [];
+      groups[product.season][product.category].push(product);
+    });
+    return groups;
+  }, [filteredProducts]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <Input
-          placeholder="Поиск товара..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="md:w-80"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Поиск по названию:</label>
+          <Input
+            type="text"
+            placeholder="Введите название товара..."
+            value={searchQuery}
+            onChange={(e: any) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
 
-        <Select value={seasonFilter} onValueChange={setSeasonFilter}>
-          <SelectTrigger className="md:w-60">
-            <SelectValue placeholder="Сезонность" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все сезоны</SelectItem>
-            {seasons.map((season) => (
-              <SelectItem key={season} value={season}>
-                {season}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Фильтр по сезону:</label>
+          <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Выберите сезон" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все</SelectItem>
+              {seasons.map(season => (
+                <SelectItem key={season} value={season}>
+                  {season}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={groupFilter} onValueChange={setGroupFilter}>
-          <SelectTrigger className="md:w-60">
-            <SelectValue placeholder="Группа" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все группы</SelectItem>
-            {groups.map((group) => (
-              <SelectItem key={group} value={group}>
-                {group}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={subgroupFilter} onValueChange={setSubgroupFilter}>
-          <SelectTrigger className="md:w-60">
-            <SelectValue placeholder="Подгруппа" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все подгруппы</SelectItem>
-            {subgroups.map((subgroup) => (
-              <SelectItem key={subgroup} value={subgroup}>
-                {subgroup}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Фильтр по категории:</label>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Выберите категорию" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-md border border-border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-40">Сезонность</TableHead>
-              <TableHead className="w-48">Наличие</TableHead>
-              <TableHead className="w-40">Группа</TableHead>
-              <TableHead className="w-48">Подгруппа</TableHead>
+              <TableHead className="w-[150px]">Сезонность</TableHead>
+              <TableHead className="w-[200px]">Категория</TableHead>
               <TableHead>Название товара</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.length === 0 ? (
+            {Object.entries(groupedProducts).map(([season, categories]) => (
+              Object.entries(categories).map(([category, items], categoryIndex) => (
+                items.map((product, productIndex) => (
+                  <TableRow
+                    key={`${season}-${category}-${productIndex}`}
+                    data-no-border={productIndex === items.length - 1 ? "true" : "false"}
+                  >
+                    {categoryIndex === 0 && productIndex === 0 && (
+                      <TableCell
+                        rowSpan={Object.values(categories).flat().length}
+                        className="font-semibold align-top bg-muted/50"
+                      >
+                        <Badge className={seasonColors[season] || "bg-muted text-muted-foreground"}>
+                          {season}
+                        </Badge>
+                      </TableCell>
+                    )}
+                    {productIndex === 0 && (
+                      <TableCell
+                        rowSpan={items.length}
+                        className="font-medium align-top"
+                      >
+                        {category}
+                      </TableCell>
+                    )}
+                    <TableCell>{product.name}</TableCell>
+                  </TableRow>
+                ))
+              ))
+            ))}
+            {filteredProducts.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={3} className="text-center text-muted-foreground">
                   Товары не найдены
                 </TableCell>
               </TableRow>
-            ) : (
-              filteredProducts.map((product, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Badge className={getSeasonColor(product.season)}>
-                      {product.season}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {product.availability}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{product.group}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{product.subgroup}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{product.name}</span>
-                  </TableCell>
-                </TableRow>
-              ))
             )}
           </TableBody>
         </Table>
       </div>
 
       <div className="text-sm text-muted-foreground">
-        Показано товаров: {filteredProducts.length} из {products.length}
+        Всего товаров: {filteredProducts.length}
       </div>
     </div>
   );
-}
+};
+
+export default ProductsTable;

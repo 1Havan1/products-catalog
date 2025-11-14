@@ -1,1 +1,1 @@
-export function Toaster() { return null; }
+export const Toaster = () => null;

@@ -1,15 +1,15 @@
-import { ProductsTable } from "@/components/ProductsTable";
+import { ProductsTable } from "../components/ProductsTable";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Каталог товаров</h1>
-          <p className="text-muted-foreground">
-            Таблица с сезонностью и группировкой по категориям
+    <div className="min-h-screen bg-background p-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-8">
+          <h1 className="mb-2 text-4xl font-bold text-foreground">Таблица сезонности товаров</h1>
+          <p className="text-lg text-muted-foreground">
+            Товары сгруппированы по сезонам и категориям
           </p>
-        </div>
+        </header>
         <ProductsTable />
       </div>
     </div>

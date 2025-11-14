@@ -1,17 +1,15 @@
-# Products Catalog
+# seasonality_categories
 
-This repository was generated from a Lovable project export and reconstructed here.
+This project was reconstructed from a generated project. It's React + TypeScript + Vite + Tailwind.
 
-To run locally:
+## How to run locally
 
-```bash
-npm install
-npm run dev
-```
+1. Install dependencies:
+   npm install
 
-Build:
+2. Start dev server:
+   npm run dev
 
-```bash
-npm run build
-npm run preview
-```
+3. Build:
+   npm run build
+

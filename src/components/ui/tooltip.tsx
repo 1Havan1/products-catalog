@@ -1,1 +1,1 @@
-export function TooltipProvider({ children }: { children: any }) { return children; }
+export const TooltipProvider = ({ children }: any) => <div>{children}</div>;
